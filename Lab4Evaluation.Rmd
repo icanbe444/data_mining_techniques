@@ -1,0 +1,37 @@
+---
+title: "Lab4_Evaluation"
+author: "Dulla"
+date: "2024-04-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(caret)
+library(mlbench)
+library(partykit)
+library(rattle)
+```
+
+Exercise 1. Run C5.0Tree with the iris dataset as above, i.e. 3 repeats of 4-fold cross
+validation.
+
+```{r}
+iris <- read.csv("iris.csv", header = T, stringsAsFactors = T)
+view(iris)
+```
+
+
+
+```{r}
+set.seed(123)
+ctrl <- trainControl(method = "repeatedcv", number= 10, repeats = 3, verboseIter = TRUE)
+c5treemod <- train(Species ~ ., data = iris,
+             method = "C5.0Tree",metric="Accuracy",
+             tuneLength = 12,
+             trControl = ctrl)
+```
+

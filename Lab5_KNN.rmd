@@ -1,0 +1,308 @@
+---
+title: "Lab5_KNN"
+author: "Dulla"
+date: "2024-04-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(caret) #ML Model buidling package
+library(tidyverse) #ggplot and dplyr
+library(MASS) #Modern Applied Statistics with S
+library(mlbench) #data sets from the UCI repository.
+library(corrplot) #Correlation plot
+library(gridExtra) #Multiple plot in single grip space
+library(timeDate)
+library(pROC) #ROC (receiver operating characteristic) for Curve analysis
+library(caTools) #AUC for Area Under ROC Curve analysis
+library(rpart.plot) #CART Decision Tree
+```
+
+```{r}
+library(e1071) #imports graphics, grDevices, class, stats, methods, utils
+library(graphics) #fourfoldplot
+library(summarytools)
+```
+
+```{r}
+data(PimaIndiansDiabetes)
+```
+
+```{r}
+# leave one out evaluation
+ctrl1 <- trainControl(method="LOOCV")
+# ensure reproducibility of results by setting the seed to a known value
+set.seed(123)
+#use knn on the PimaIndiansDiabetes dataset
+mod11.knn<- train(diabetes~., data=PimaIndiansDiabetes,
+method="knn", trControl=ctrl1)
+```
+
+To check accuracy for values k values
+```{r}
+print(mod11.knn)
+```
+
+To visualise the accuracy for various k values
+```{r}
+plot(mod11.knn, type="p")
+```
+
+```{r}
+# Get results for best k, which are stored in “pred”.
+results <- (mod11.knn$pred[mod11.knn$pred$k == mod11.knn$bestTune$k,])
+#Remove unwanted columns (k and instance number)
+results$k <- NULL
+results$rowIndex <- NULL
+# Produce the confusion matrix.
+table(results)
+```
+
+```{r}
+# using same train control as before, i.e. leave one out (defined above)
+# # ensure reproducibility of results by setting the seed to a known value
+set.seed(123)
+mod21.knn<- train(diabetes~., data=PimaIndiansDiabetes,
+method="knn", tuneGrid=expand.grid(.k=1:20), trControl=ctrl1)
+print(mod21.knn)
+plot(mod21.knn, type="p")
+```
+
+```{r}
+# leave one out evaluation
+ctrl2 <- trainControl(method="repeatedcv", repeats= 3, number = 10)
+
+```
+
+
+
+### Using bootstrap
+```{r}
+ctrl <- trainControl(method="boot",number=3)
+set.seed(123)
+mod13 <- train(diabetes~., data=PimaIndiansDiabetes,
+method="knn",tuneGrid=expand.grid(.k=1:20), trControl=ctrl)
+print(mod13)
+plot(mod21.knn, type="p")
+```
+
+
+
+
+
+
+```{r}
+# using same train control as before, i.e. leave one out (defined above)
+# # ensure reproducibility of results by setting the seed to a known value
+set.seed(123)
+mod21.knn<- train(diabetes~., data=PimaIndiansDiabetes,
+method="knn", tuneGrid=expand.grid(k=1:20), trControl=ctrl2)
+print(mod21.knn)
+confusionMatrix.train(mod13, norm="average")
+plot(mod21.knn, type="p")
+```
+
+To try only selected values of k use a vector in the tuneGrid For example, if we only want to use k=21 and k=23
+```{r}
+mod31.knn <- train(diabetes~., data=PimaIndiansDiabetes,
+method="knn", tuneGrid=expand.grid(k=c(21,23)), trControl=ctrl2)
+print(mod31.knn)
+plot(mod31.knn, type="p")
+confusionMatrix.train(mod13, norm="average")
+plot(mod13)
+```
+
+```{r}
+summary(PimaIndiansDiabetes)
+```
+
+
+###Preprocessing
+```{r}
+set.seed(123)
+mod51.knn<- train(diabetes~., data=PimaIndiansDiabetes,
+method="knn", tuneGrid=expand.grid(.k=1:20),
+preProcess=c("range"), trControl=ctrl1)
+print(mod51.knn)
+plot(mod51.knn, type="p")
+```
+Standardisation: centering and scaling data
+```{r}
+set.seed(1)
+mod41.knn<- train(diabetes~., data=PimaIndiansDiabetes,
+method="knn", preProcess=c("center", "scale"),
+trControl=ctrl1)
+print(mod41.knn)
+plot(mod41.knn, type="p")
+```
+```{r}
+preProcValuesN <- preProcess(PimaIndiansDiabetes, method = c("range"))
+diabetesNormalised <- predict(preProcValuesN, PimaIndiansDiabetes)
+# checking the results. Use head for knitting so that the results appear
+# in the knitted document. View shows them in a separate window.
+# View(diabetesNormalised)
+head(diabetesNormalised, 15)
+```
+
+```{r}
+summary(diabetesNormalised)
+```
+
+Checking standardised data - centered and scaled data
+To check the centered and scaled dataset use
+```{r}
+preProcValuesCS <- preProcess(PimaIndiansDiabetes, method =c("center", "scale"))
+diabetesCenteredScaled <- predict(preProcValuesCS, PimaIndiansDiabetes)
+# View(diabetesCenteredScaled)
+head(diabetesCenteredScaled, 15)
+# Checking summary of each attribute.
+summary(diabetesCenteredScaled)
+```
+
+
+## Exercise 4 - WeatherPlay data standardised - centered and scaled
+```{r}
+preProcWeather <- preProcess(WeatherPlay, method =c("center", "scale"))
+WeatherCenteredScaled <- predict(preProcWeather, WeatherPlay)
+# View(WeatherCenteredScaled)
+head(WeatherCenteredScaled, 14)
+# checking ranges for standardised data
+summary(WeatherCenteredScaled)
+```
+
+
+
+
+
+
+
+Normalise the WeatherPlay dataset (package partykit) and check the
+resulting instances are similar to those in obtained during class exercises.
+```{r}
+preProcValuesN <- preProcess(WeatherPlay, method = c("range"))
+WeatherPlayNormalised <- predict(preProcValuesN, WeatherPlay)
+# checking the results. Use head for knitting so that the results appear
+# in the knitted document. View shows them in a separate window.
+# View(diabetesNormalised)
+head(WeatherPlayNormalised, 15)
+```
+
+
+
+Standardise (centre and scale) the WeatherPlay dataset (package
+partykit) and check the results.
+```{r}
+preProcValuesN <- preProcess(WeatherPlay, method = c("center","scale"))
+WeatherPlayNormalised <- predict(preProcValuesN, WeatherPlay)
+# checking the results. Use head for knitting so that the results appear
+# in the knitted document. View shows them in a separate window.
+# View(diabetesNormalised)
+head(WeatherPlayNormalised, 15)
+```
+
+```{r}
+#binarise nominal attributes – one-hot encoding
+# make a copy
+noClass <-WeatherPlay # Throws an error, to avoid please install package partykit
+# remove the class - it is not transformed
+noClass$play <- NULL
+set.seed(123)
+#binarise nominal attributes - one-hot encoding
+binaryVars <- dummyVars(~ ., data = noClass)
+newWeather <- predict(binaryVars, newdata = noClass)
+# add the class to the binarised dataset
+binWeather <-cbind(newWeather, WeatherPlay[5])
+# check the result.
+# View(binWeather) could have been used instead but it does not appear in the knitted document.
+head(binWeather, 14)
+```
+
+```{r}
+WeatherPlay
+```
+
+
+```{r}
+removeClass <- WeatherPlay
+removeClass$play <- NULL
+# add the class to the binarised dataset
+binWeather <-cbind(newWeather, WeatherPlay[5])
+binWeather
+```
+
+```{r}
+preProcValues <- preProcess(binWeather, method = c("range"))
+weatherBinNorm <- predict(preProcValues, binWeather)
+# checking normalised dataset
+# View(weatherBinNorm)
+head(weatherBinNorm,14)
+```
+
+```{r}
+
+```
+
+
+### Using kNN on normalised dataset.
+```{r}
+# Applying kNN
+set.seed(123)
+mod61.knn<- train(play~., data=weatherBinNorm,method="knn", preProcess=c("range"),trControl=ctrl1)
+print(mod61.knn)
+plot(mod61.knn)
+```
+## Exercise 6 All values are numeric, so they can be standardised
+```{r}
+preProcessBinScaled <- preProcess(binWeather, method =c("center", "scale"))
+weatherBinScaled <- predict(preProcessBinScaled, binWeather)
+head(weatherBinScaled,14)
+```
+
+Applying kNN to standardised dataset.
+```{r}
+set.seed(123)
+mod71.knn<- train(play~., data=weatherBinScaled,
+method="knn", preProcess=c("center","scale"),trControl=ctrl1)
+print(mod71.knn)
+plot(mod71.knn)
+```
+```{r}
+carPrice <- read.csv("CarPrice_Assignment.csv", header=T,
+stringsAsFactors = T)
+carPrice
+```
+
+```{r}
+carPrice$CarName <- NULL
+carPrice$enginetype <- NULL
+carPrice$cylindernumber <- NULL
+carPrice$fuelsystem <- NULL
+```
+
+```{r}
+set.seed(123)
+mod91.knn<- train(price ~., data=carPrice,method="knn", tuneGrid= expand.grid(k=1:9) ,preProcess=c("range"),metric="RMSE",trControl=ctrl1)
+print(mod21.knn)
+plot(mod21.knn)
+```
+
+## Exercise 8
+Binarising categorical values and applying kNN
+```{r}
+# remove the class - it is not transformed
+carPrice2 <- carPrice
+carPrice2$price <- NULL
+set.seed(123)
+#binarise nominal attributes - one-hot encoding
+binaryVars <- dummyVars(~ ., data = carPrice2)
+carPriceN <- predict(binaryVars, newdata = carPrice2)
+carPrice22 <- cbind(carPriceN, carPrice[20])
+carPrice22
+```
+
+
+

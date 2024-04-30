@@ -1,0 +1,86 @@
+---
+title: "Lab6_K-Means-Cluster"
+author: "Dulla"
+date: "2024-04-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+rm(list = ls())
+```
+
+
+```{r}
+library(caret)
+library(RColorBrewer)
+library(scales)
+library(cluster)
+library(rattle)
+library(fpc)
+library(rgl)
+```
+
+
+
+```{r}
+delta <- read.csv(file="delta.csv", header=T, sep=",", row.names=1)
+```
+
+```{r}
+prepDelta <- preProcess(delta,method = c("center", "scale", "pca"))
+delta2 <- predict(prepDelta, newdata = delta)
+```
+
+```{r}
+# Variable wss will hold the WCSS for each clustering result.
+wss <- NULL
+# Run kmeans and check within cluster sum of squares 
+# for selected k values. Store results in wss
+for (i in 2:15) 
+wss[i] <- sum(kmeans(delta2, centers=i, nstart=100, 
+iter.max=1000)$withinss)
+
+```
+
+
+Plotting the results
+```{r}
+plot(1:15, wss, type="b", xlab="k= Number of Clusters", ylab="Within groups sum of squares")
+```
+```{r}
+sil <-NULL
+for (i in 2:15) 
+{ 
+  res <- kmeans(delta2, centers = i, nstart = 25)
+  ss <- silhouette(res$cluster, dist(delta2))
+  sil[i] <- mean(ss[, 3])
+}
+plot(1:15, sil, type="b", xlab="k= Number of Clusters", ylab="Average silhouette")
+
+```
+
+```{r}
+km <- kmeans(delta2, 4, nstart=25, iter.max=1000)
+```
+
+To visualise the results with one colour per cluster.
+```{r}
+#set the colour palette
+palette(alpha(brewer.pal(9,'Set1'), 0.5))
+plot(delta2, col=km$clust, pch=16)
+```
+
+
+To visualise in 3D – principal components 1, 2 and 3 (attributes resulting from the principal components analysis we used in preprocessing) with one colour per cluster
+
+###issues with plot3d, installing rgl. Ended up downloading 
+```{r}
+plot3d(delta2$PC1, delta2$PC2, delta2$PC3, col=km$clust)
+
+```
+

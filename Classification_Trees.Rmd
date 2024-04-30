@@ -1,0 +1,190 @@
+---
+title: "Lab3_Classification_Trees"
+author: "Dulla"
+date: "2024-04-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(caret)
+library(rattle)
+```
+
+```{r}
+contactLenses <- read.csv("contactLenses.csv", header = T,stringsAsFactors = T)
+view(contactLenses)
+```
+
+We can see that there is a column called tearProductionRate. To check the allowed values, we can use the levels() function.
+```{r}
+levels(contactLenses$tearProductionRate)
+```
+
+```{r}
+newData <- data.frame( age="young", prescription ="myope", astigmatism="no", tearProductionRate="very reduced",
+contactLenses="no", stringsAsFactors=T)
+```
+
+```{r}
+levels(newData$tearProductionRate)
+```
+Merging the two dataset
+```{r}
+contactLenses <- rbind(contactLenses, newData)
+contactLenses
+```
+
+Changing the value of a column
+```{r}
+contactLenses$tearProductionRate[25]<- "normal"
+```
+
+```{r}
+contactLenses$tearProductionRate <-
+droplevels(contactLenses$tearProductionRate)
+```
+
+```{r}
+levels(contactLenses$tearProductionRate)
+```
+
+Before we change the value to "very reduced" we need to add this value to the set of levels
+```{r}
+levels(contactLenses$tearProductionRate) <- c(levels(contactLenses$tearProductionRate),"very reduced")
+```
+
+We can now change the value in the dataset to this new value
+```{r}
+contactLenses$tearProductionRate[25] <- "very reduced"
+```
+
+```{r}
+data("WeatherPlay", package = "partykit")
+WeatherPlay
+```
+
+
+```{r}
+dim(WeatherPlay)
+```
+
+```{r}
+attributes(WeatherPlay)
+```
+
+```{r}
+set.seed (1)
+c5model <- train(play ~ .,data = WeatherPlay,method = "C5.0Rules",trControl = trainControl(method = "cv", number = 2))
+```
+
+
+```{r}
+summary(c5model$finalModel)
+```
+```{r}
+data(segmentationData)
+```
+
+```{r}
+segmentationData$Cell <- NULL
+```
+
+```{r}
+data(segmentationData)
+```
+
+```{r}
+STrain <- subset(segmentationData, Case == "Train")
+```
+
+
+```{r}
+STest <- subset(segmentationData, Case == "Test")
+```
+
+```{r}
+STest$Case <- NULL
+STrain$Case <- NULL 
+```
+
+```{r}
+set.seed(1)
+Smodel <- train(Class ~ .,data = STrain, method = "C5.0Tree", trControl = trainControl(method = "cv", number = 5))
+```
+
+```{r}
+summary(Smodel$finalModel)
+summary(Smodel$results)
+```
+
+To test the model on the STest datset use the predict function. You can then use the confusionMatrix function to check the results of this test.
+```{r}
+TestRes <- predict(Smodel, newdata = STest, type="raw")
+confusionMatrix(TestRes, STest$Class)
+```
+
+```{r}
+diabetes <- read.csv("diabetes.csv", header = T, stringsAsFactors = T)
+diabetes
+```
+
+
+
+Apply C5.0Trees and C5.0Rules to these datasets and compare the results. Did you get any warning messages? Which algorithm is best?
+```{r}
+C5.0Treecontact <- train(contactLenses ~ .,data = contactLenses ,method = "C5.0Tree",metric = "Accuracy", trControl= trainControl(method = "cv", number = 5)  )
+```
+
+```{r}
+summary(C5.0Treecontact$finalModel)
+```
+
+```{r}
+C5.0Rulescontact <- train(contactLenses ~ .,data = contactLenses ,method = "C5.0Rules",metric = "Accuracy", trControl= trainControl(method = "cv", number = 5)  )
+```
+
+```{r}
+summary(C5.0Rulescontact$finalModel)
+```
+Using the daibetes dataset
+```{r}
+set.seed(123)
+C5.0Treediabetes <- train(class ~ .,data = diabetes ,method = "C5.0Tree",metric = "Accuracy", trControl= trainControl(method = "cv", number = 5)  )
+```
+
+```{r}
+summary(C5.0Treediabetes$finalModel)
+```
+
+```{r}
+set.seed(123)
+C5.0Rulesdiabetes <- train(class ~ .,data = diabetes ,method = "C5.0Rules",metric = "Accuracy", trControl= trainControl(method = "cv", number = 5)  )
+```
+
+```{r}
+summary(C5.0Rulesdiabetes$finalModel)
+```
+
+Apply CART to the diabetes dataset. CART is another algorithm for implementing decision trees which uses Gini index instead of information gain. To apply it, use method "rpart". Assuming you leave the results in a variable called rPart the resulting tree can be plotted using
+```{r}
+set.seed(123)
+set.seed(1)
+rPart <- train(class ~ .,
+               data = diabetes,
+               method = "rpart", 
+               metric = "Accuracy",
+               trControl = trainControl(method = "cv", 
+                                        number = 5))
+summary(rPart$finalModel)
+
+```
+
+```{r}
+fancyRpartPlot(rPart$finalModel)
+```
+

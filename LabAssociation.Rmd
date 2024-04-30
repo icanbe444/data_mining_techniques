@@ -1,0 +1,195 @@
+---
+title: "Lab9&10_Apriori"
+author: "Dulla"
+date: "2024-04-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(arules)
+library(arulesViz)
+```
+
+```{r}
+data("Groceries")
+summary(Groceries)
+```
+
+```{r}
+rules <- apriori(Groceries, parameter=list(support=0.001, confidence=0.5))
+```
+
+```{r}
+inspect(head(sort(rules, by ="lift"),10))
+```
+
+```{r}
+inspect(head(sort(rules, by ="confidence"),15))
+```
+
+```{r}
+quality(rules)
+```
+
+```{r}
+head(quality(rules))
+```
+
+###Removing redundant rules
+Some rules may be redundant (covered by other rules). You may remove them, using a quality measure (e.g. lift) as follows:
+```{r}
+redundant <- is.redundant(rules, measure = "lift")
+```
+
+```{r}
+# remove redundant rules - i.e. exclude rules in "redundant" from set 
+rules <- rules[!redundant]
+```
+
+```{r}
+plot(rules)
+```
+```{r}
+plot(rules, measure = "support", shading = "lift")
+```
+
+We could also use the shading to show the number of items in the itemsets, i.e. the “order” of the rule.
+```{r}
+plot(rules, shading="order")
+```
+To include a title for you plot you can use main in the control list as follows
+```{r}
+plot(rules, shading="order", 
+control=list(main = "Rule size - Support vs confidence"))
+```
+
+
+
+
+
+```{r}
+plot(rules, measure = c("support", "lift"), shading = "order",
+     control = list(main = "Support vs Lift, Shaded by Itemset Size"))
+```
+
+Plotting an interactive tool
+```{r}
+plot(rules, measure=c("support", "lift"), 
+shading="confidence", engine ="interactive")
+```
+```{r}
+confrules <- rules[quality(rules)$confidence >= 0.75]
+plot(confrules)
+```
+
+4.	Plot rules with a minimum confidence of 70% and a minimum lift of 6.
+```{r}
+# Generate rules with specific confidence and lift parameters
+rules <- apriori(Groceries, parameter=list(support=0.001, confidence=0.7))  # minimum confidence of 70%
+
+# Filter rules with a minimum lift of 6
+filtered_rules <- subset(rules, lift >= 6)
+
+# Plot the rules with specific measurements
+plot(filtered_rules, measure = c("support", "lift"), shading = "confidence",
+     control = list(main = "Rules with min Confidence of 70% and min Lift of 6"))
+```
+
+5.	It is often the case that the most interesting rules are in the support/confidence border.  Obtain an interactive support vs. confidence plot and inspect the border. Are there any interesting rules?
+```{r}
+plot(rules, measure=c("support", "confidence"), 
+shading="confidence", engine ="interactive")
+```
+
+```{r}
+confrules <- rules[quality(rules)$confidence >= 0.8]
+```
+
+```{r}
+plot(confrules, method="matrix", measure="lift")
+```
+
+```{r}
+plot(confrules, method="matrix", measure="lift", 
+		control=list(reorder='support/confidence'))
+```
+
+6. Plot a matrix of rules with a lift of at least 7. Use confidence as your measure.
+```{r}
+confrules <- rules[quality(rules)$lift <= 6]
+```
+
+```{r}
+plot(confrules, method="matrix", measure="confidence", 
+		control=list(reorder='support/confidence'))
+```
+
+3D plot
+```{r}
+plot(confrules, method="matrix3D", measure="lift")
+```
+
+```{r}
+plot(confrules, method="matrix3D", measure="lift", 
+		control=list(reorder='support/confidence'))
+```
+You can plot 2 measures together, one using colour and the other using luminance. Try.
+```{r}
+plot(confrules, method="matrix", measure=c("lift", "confidence"))
+```
+
+and reordering for changed visuals
+```{r}
+plot(confrules, method="matrix", measure=c("lift", "confidence"), control=list(reorder='similarity'))
+```
+Plotting best 10 rules
+```{r}
+liftrules <- head(sort(rules, by="lift"), 10)
+plot(liftrules, method="paracoord")
+```
+
+```{r}
+plot(liftrules, method="paracoord", control=list(reorder=TRUE))
+```
+7.	Select the best 100 rules  according to support
+```{r}
+liftrules <- head(sort(rules, by="support"), 100)
+plot(liftrules, method="paracoord")
+```
+8.	Keep only those with a confidence of 60% and a lift of 3.
+```{r}
+rules <- apriori(Groceries, parameter=list(support=0.001, confidence=0.60))  # minimum confidence of 60%
+filtered_rules <- subset(rules, lift >=3 )
+
+# Plot the rules with specific measurements
+plot(filtered_rules, measure = "support", shading = "confidence",
+     control = list(main = "Rules with min Confidence of 60% and min Lift of 3"))
+```
+
+```{r}
+butterWhiteBread <- apriori(Groceries, 
+parameter=list(support=0.001, confidence=0.5),
+	appearance = list(rhs=c("butter", "white bread"), default="lhs"),
+	control = list(verbose=F))
+
+inspect(head(sort(butterWhiteBread, by ="lift"),15))
+
+```
+
+```{r}
+butterWhiteBreadWholeMilk <- apriori(Groceries, 
+parameter=list(support=0.001, confidence=0.5),
+appearance = list(lhs=c("butter", "white bread"), 
+rhs=c("whole milk")),
+			control = list(verbose=F))
+
+inspect(head(sort(butterWhiteBreadWholeMilk, by ="lift"),15))
+
+
+```
+

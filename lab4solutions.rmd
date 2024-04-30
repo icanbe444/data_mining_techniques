@@ -1,0 +1,686 @@
+---
+title: "Lab: Evaluation of Learning.  Code and brief comments"
+author: "Ines Arana"
+date: "2022/23"
+output: 
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+### Clean up
+```{r, warnings= F}
+rm(list=ls())
+
+```
+
+## Packages
+
+```{r, warnings = F}
+library(caret)
+library(mlbench)
+library(partykit)
+library(rattle)
+
+## for plotting rpart trees
+library(rattle)
+```
+
+## Train Control
+
+Setting up the train control - number holds the folds and repeats the iterations. Note, if what you are evaluating takes a long time, change the repeats to 1 for the labs.
+
+verboseIter is set to TRUE to see how many models are tested when learning about different train control methods but it should normally be set to FALSE.
+
+## Exercise 1
+
+```{r}
+# Defining the evaluation method:4-fold cross validation repeated 3 times.
+
+ctrl <- trainControl(method = "repeatedcv",
+		number = 4,
+    repeats = 3,
+		verboseIter=TRUE)
+
+# ensuring reproducibility by setting the seed
+set.seed(123)
+
+# running C5.0Tree on the iris dataset. 
+c5treemod <- train(Species ~ ., data = iris,
+             method = "C5.0Tree",metric="Accuracy",
+             tuneLength = 12,
+             trControl = ctrl)
+
+# run values
+c5treemod
+
+# checking results
+summary(c5treemod$finalModel)
+
+
+```
+
+
+
+
+## Exercise 2
+
+Class values are in rows and predictions are in columns.
+
+## Exercise 3
+
+It is on training data. We would like to undertake the evaluation on testing data instead.
+
+## Exercise 4
+
+The most difficult class distinctions are between iris virginica and iris versicolor, as these two species are, at times, confused with some versicolor classed as virginica and some virginica classed as versicolor.
+
+## Exercise 5
+
+The classification tree has 4 levels (including the leaves) and 7 nodes (3 standard nodes and 4 leaves).
+
+## Exercise 6
+
+The most important attribute is  petal length as it appears at the root of the tree (and also further down the tree). The second most important attribute is petal width, as it is the other attribute used in the tree.
+
+## Exercise 7
+
+A peal length of 1.9 or smaller on its own is enough to distinguish all instances of setosa from the rest of the instances. 
+
+
+## The metric parameter in train
+
+Note: verboseIter is set to false to avoid large amounts of output.
+
+```{r}
+ctrl <- trainControl(method = "repeatedcv",
+		number = 4,
+    repeats = 3,
+		verboseIter=FALSE)
+
+# ensuring reproducibility by setting the seed
+set.seed(123)
+
+# running C5.0Tree on the iris dataset. Accuracy
+c5treemod <- train(Species ~ ., data = iris,
+             method = "C5.0Tree",
+             metric = "Accuracy",
+             trControl = ctrl)
+
+# run values
+c5treemod
+
+# checking results
+summary(c5treemod$finalModel)
+
+```
+
+## Exercise 8
+
+Using kappa as the metric.
+
+```{r}
+# running C5.0Tree on the iris dataset. 
+c5treemodKappa <- train(Species ~ ., data = iris,
+             method = "C5.0Tree",
+             metric = "Kappa",
+             trControl = ctrl)
+
+# run values
+c5treemodKappa
+
+# checking results
+summary(c5treemodKappa$finalModel)
+
+```
+
+
+## Comparing performance on tests
+
+Confusion matrices using % overall figures over all the runs, actual numbers added over all the runs and average values.
+
+```{r}
+# none – numbers obtained over independent runs added. 
+# It should add up number of repetitions times dataset size.
+# If using 10-fold cross validation 3 times with the 
+# iris dataset (150 instances)
+# sum(all numbers in confusionMatrix) = 150 * 3 = 450
+confusionMatrix.train(c5treemod, norm="none")
+
+# overall – figures are percentages of the results obtained over 
+# all the runs.
+# If using 10-fold cross validation 3 times with the 
+# iris dataset (150 instances)
+# sum(all numbers in confusionMatrix) = 100 [i.e. 100%]
+confusionMatrix.train(c5treemod, norm ="overall")
+
+#averaged over number of samples
+# If using 10-fold cross validation 3 times with the 
+# iris dataset (150 instances)
+# each run tests 15 instances (one tenth of 150)
+# sum(all numbers in confusionMatrix) = 15
+confusionMatrix.train(c5treemod, norm="average")
+
+
+```
+
+## Exercise 9
+
+The confusion matrices obtained have row and column values transposed compared to the ones obtained with other functions. The (average) accuracy is different to the one obtained using training data, although it is very similar.
+
+## Leave one out
+
+```{r}
+# Using leave one out
+
+ctrl <- trainControl(method = "LOOCV")
+
+c5weathermod <- train(play ~ ., data = WeatherPlay,
+             method = "C5.0Tree",
+             trControl = ctrl)
+ 
+print(c5weathermod)
+summary(c5weathermod)
+
+
+```
+
+
+## Exercise 10
+
+
+
+The control (ctrl) should be changed depending on the evaluation method wanted.
+
+```{r}
+
+ctrl1 <- trainControl(method = "repeatedcv",
+		number = 10,
+    repeats = 1, ## to avoid long waits for results
+		verboseIter=FALSE)
+
+ctrl2 <- trainControl(method = "LGOCV",
+		number = 1,
+    p = 0.67, 
+		verboseIter=FALSE)
+
+ctrl3 <- trainControl(method = "boot",
+		number = 3,
+		verboseIter=FALSE)
+
+ctrl <- ctrl1 # change to ctrl2 or ctrl 3 as required.
+```
+
+
+
+### Iris dataset
+
+
+Choosing cross validation.
+
+#### C5.0Tree
+
+```{r}
+
+ctrl <- ctrl1
+
+# Train C5.0Tree model
+set.seed(123)
+c5.0TreemodIR <- train(Species ~ ., 
+             data = iris,
+             method = "C5.0Tree",
+             trControl = ctrl)
+c5.0TreemodIR 
+summary(c5.0TreemodIR)
+```
+
+
+### C5.0Rules
+
+```{r}
+set.seed(123)
+c5rulesmodIR <- train(Species ~ ., 
+             data = iris,
+             method = "C5.0Rules",
+             trControl = ctrl)
+c5rulesmodIR
+summary(c5rulesmodIR$finalModel)
+#summary(c5rulesmodIR)
+```
+
+### rpart
+
+```{r}
+set.seed(123)
+rpartmodIR <- train(Species ~ ., 
+                 data = iris,
+                 method = "rpart",
+                 trControl = ctrl) 
+rpartmodIR
+#summary(rpartmodIR$finalModel)
+fancyRpartPlot(rpartmodIR$finalModel)
+```
+
+
+
+### rpart2
+
+```{r}
+set.seed(123)
+rpart2modIR <- train(Species ~ ., data = iris,
+                 method = "rpart2",
+                 trControl = ctrl)
+rpart2modIR
+#summary(rpart2modIR)
+fancyRpartPlot(rpart2modIR$finalModel)
+```
+
+
+### ctree
+
+```{r}
+set.seed(123)
+ctreemodIR <- train(Species ~ ., 
+                 data = iris,
+                 method = "ctree",
+                 trControl = ctrl)
+ctreemodIR
+summary(ctreemodIR)
+plot(ctreemodIR$finalModel)
+```
+
+
+### ctree2
+
+```{r}
+set.seed(123)
+
+ctree2modIR <- train(Species ~ ., 
+                 data = iris,
+                 method = "ctree2",
+                 trControl = ctrl)
+ctree2modIR
+summary(ctree2modIR)
+plot(ctree2modIR$finalModel)
+```
+
+
+### Contact lenses
+
+First, get the data.
+```{r}
+
+contacts <- read.csv("contactLenses.csv", header=T, stringsAsFactors = T)
+
+```
+
+Not a lot of data. Choosing bootstrap - but changing the number of folds to only 3.Using 4 repeats.
+
+### C5.0Tree
+
+```{r}
+
+ctrl <- ctrl3
+
+# Train C5.0Tree model
+set.seed(123)
+c5.0TreemodLR <- train(contactLenses ~ ., 
+             data = contacts,
+             method = "C5.0Tree",
+             trControl = ctrl)
+c5.0TreemodLR 
+summary(c5.0TreemodLR)
+```
+
+
+### c5.0Rules
+
+```{r}
+set.seed(123)
+c5rulesmodCL <- train(contactLenses ~ ., 
+             data = contacts,
+             method = "C5.0Rules",
+             trControl = ctrl)
+# c5rulesmodCL
+summary(c5rulesmodCL$finalModel)
+```
+
+### rpart
+
+```{r}
+set.seed(123)
+rpartmodCL <- train(contactLenses ~ ., 
+                 data = contacts,
+                 method = "rpart",
+                 trControl = ctrl) 
+rpartmodCL
+#summary(rpartmodCL)
+#fancyRpartPlot(rpartmodCL$finalModel)
+```
+
+Note that the above may result in no tree (answer is always the same) and, therefore, attempting to plot the tree would result in an error.
+
+### rpart2
+
+```{r}
+set.seed(123)
+rpart2modCL <- train(contactLenses ~ ., data = contacts,
+                 method = "rpart2",
+                 trControl = ctrl)
+rpart2modCL
+#summary(rpart2modCL)
+fancyRpartPlot(rpart2modCL$finalModel)
+```
+
+
+### ctree
+
+```{r}
+set.seed(123)
+ctreemodCL <- train(contactLenses ~ ., 
+                 data = contacts,
+                 method = "ctree",
+                 trControl = ctrl)
+ctreemodCL
+summary(ctreemodCL)
+plot(ctreemodCL$finalModel)
+```
+
+
+### ctree2
+
+```{r}
+set.seed(123)
+
+ctree2modCL <- train(contactLenses ~ ., 
+                 data = contacts,
+                 method = "ctree2",
+                 trControl = ctrl)
+ctree2modCL
+summary(ctree2modCL)
+plot(ctree2modCL$finalModel)
+```
+
+
+
+### Running C5.0Tree on the Glass dataset
+
+```{r}
+data(Glass)
+set.seed(123)
+c5.0treemodGlass <- train(Type ~ ., data = Glass,
+             method = "C5.0Tree",
+             trControl = ctrl)
+c5.0treemodGlass
+summary(c5.0treemodGlass)
+```
+
+### Running C5.0Rules on the Glass dataset
+
+```{r}
+set.seed(123)
+c5.0rulesmodGlass <- train(Type ~ ., data = Glass,
+             method = "C5.0Rules",
+             trControl = ctrl)
+# c5.0rulesmodGlass
+summary(c5.0rulesmodGlass$finalModel)
+```
+
+
+### Running rpart on the Glass dataset
+
+```{r}
+set.seed(123)
+rparttreemodGlass <- train(Type ~ ., data = Glass,
+             method = "rpart",
+             trControl = ctrl)
+rparttreemodGlass
+fancyRpartPlot(rparttreemodGlass$finalModel )
+```
+
+### Running rpart2 on the Glass dataset
+
+```{r}
+set.seed(123)
+rpart2treemodGlass <- train(Type ~ ., data = Glass,
+             method = "rpart2",
+             trControl = ctrl)
+rpart2treemodGlass
+fancyRpartPlot(rpart2treemodGlass$finalModel)
+```
+
+### Running ctree on the Glass dataset
+
+
+```{r}
+set.seed(123)
+ctreemodGlass <- train(Type ~ ., data = Glass,
+             method = "ctree",
+             trControl = ctrl)
+ctreemodGlass
+summary(ctreemodGlass)
+plot(ctreemodGlass$finalModel)
+```
+
+### Running ctree2 on the Glass dataset
+
+```{r}
+set.seed(123)
+ctreemod2Glass <- train(Type ~ ., data = Glass,
+             method = "ctree2",
+             trControl = ctrl)
+ctreemod2Glass
+summary(ctreemod2Glass)
+plot(ctreemod2Glass$finalModel)
+```
+
+
+The results should be compared for each algorithm and evaluation method. 
+
+### Letter recognition dataset
+
+First, get the data.
+```{r}
+
+data(LetterRecognition)
+
+# Checking the data reveals 20000 instances!!!
+# View(LetterRecognition)
+```
+
+Splitting the data, 33% for testing 67% for training, 1 repetition only to reduce computation time.
+
+### C5.0Tree
+
+```{r}
+ctrl <- ctrl2  #- using the holdout method
+
+# Train C5.0Tree model
+set.seed(123)
+c5.0TreemodIR <- train(lettr ~ ., 
+             data = LetterRecognition,
+             method = "C5.0Tree",
+             trControl = ctrl)
+c5.0TreemodIR 
+summary(c5.0TreemodIR)
+```
+
+
+### c5.0Rules
+
+```{r}
+set.seed(123)
+c5rulesmodIR <- train(lettr ~ ., 
+             data = LetterRecognition,
+             method = "C5.0Rules",
+             trControl = ctrl)
+ c5rulesmodIR
+# summary(c5rulesmodIR$finalModel)  # this is huge
+```
+
+### rpart
+
+```{r}
+set.seed(123)
+rpartmodIR <- train(lettr ~ ., 
+                 data = LetterRecognition,
+                 method = "rpart",
+                 trControl = ctrl)
+rpartmodIR
+# summary(rpartmodIR)
+fancyRpartPlot(rpartmodIR$finalModel)
+```
+
+### rpart2
+
+```{r}
+set.seed(123)
+rpart2modIR <- train(lettr ~ ., data = LetterRecognition,
+                 method = "rpart2",
+                 trControl = ctrl)
+rpart2modIR
+#summary(rpart2modIR)
+fancyRpartPlot(rpart2modIR$finalModel)
+```
+
+
+### ctree
+
+```{r}
+set.seed(123)
+ctreemodIR <- train(lettr ~ ., 
+                 data = LetterRecognition,
+                 method = "ctree",
+                 trControl = ctrl)
+ctreemodIR
+summary(ctreemodIR)
+plot(ctreemodIR$finalModel)
+```
+
+
+### ctree2
+
+```{r}
+set.seed(123)
+
+ctree2modLR <- train(lettr ~ ., 
+                 data = LetterRecognition,
+                 method = "ctree2",
+                 trControl = ctrl)
+ctree2modLR
+summary(ctree2modLR)
+plot(ctree2modLR$finalModel)
+```
+
+
+
+## Measuring statistical significance
+
+```{r}
+# load the diabetes dataset.
+data(PimaIndiansDiabetes)
+
+# prepare training method.
+ctrl <- trainControl(method="repeatedcv", number=10, repeats=3)
+```
+
+Use several algorithms
+
+
+```{r}
+# rpart
+set.seed(1)
+mod.cart <- train(diabetes~., data=PimaIndiansDiabetes, method="rpart", trControl=ctrl)
+
+# C5.0 Rules
+set.seed(1)
+mod.c5rules <- train(diabetes~., data=PimaIndiansDiabetes, method="C5.0Rules", trControl=ctrl)
+
+# C5.0 Trees
+set.seed(1)
+mod.c5t <- train(diabetes~., data=PimaIndiansDiabetes, method="C5.0Tree", trControl=ctrl)
+```
+
+
+### collecting the results for comparison
+
+```{r}
+
+# collect resamples
+results <- resamples(list(CART=mod.cart, c5Rules= mod.c5rules, C5Tree= mod.c5t))
+# show accuracy and kappa details
+results
+summary(results)
+
+```
+
+
+### Showing the results graphically
+
+```{r}
+scales <- list(x=list(relation="free"), y=list(relation= "free"))
+dotplot(results, scales=scales, conf.level = 0.95)
+
+```
+
+
+```{r}
+# boxplot
+bwplot(results)
+
+# scatterplot
+splom(results)
+```
+
+### Exercise 10
+
+All algorithms have been run above except ctree. Code for ctree
+
+```{r}
+set.seed(1)
+mod.ctree <- train(diabetes~., data=PimaIndiansDiabetes, method="ctree", trControl=ctrl)
+```
+
+Collecting results
+
+```{r}
+
+# collect resamples
+results <- resamples(list(CART=mod.cart, c5Rules= mod.c5rules, C5Tree= mod.c5t, ctree = mod.ctree))
+# show accuracy and kappa details
+results
+summary(results)
+
+```
+
+Showing the results graphically at 99% confidence.
+
+```{r}
+scales <- list(x=list(relation="free"), y=list(relation= "free"))
+dotplot(results, scales=scales, conf.level = 0.99)
+
+```
+
+The intervals are larger.
+
+### Exercise 11
+
+```{r}
+dotplot(results, scales=scales, conf.level = 0.90)
+#dotplot(results, scales=scales, conf.level = 0.85)
+#dotplot(results, scales=scales, conf.level = 0.80)
+dotplot(results, scales=scales, conf.level = 0.60)
+dotplot(results, scales=scales, conf.level = 0.40)
+```
+
+
+An extremely low confidence is required to be able to state that the difference is performance is statistically significant. In the above case a confidence level well below 0.5 (e.g. 0.4) is needed to state significant kappa differences.
+
+
+
+
+
+

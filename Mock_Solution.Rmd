@@ -1,0 +1,211 @@
+---
+title: "MockSolution"
+author: "Dulla"
+date: "2024-04-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Clearing the environment.
+
+```{r}
+rm(list=ls())
+```
+
+Loading  library (package)  tidyverse plus other libraries
+
+```{r warning = F, message = F}
+
+library(tidyverse)
+library(caret)
+#library(arules)
+library(arulesViz)
+```
+
+### Loading the data files.
+
+
+```{r}
+contact <- read.csv("contactLenses.csv", header=T, stringsAsFactors=T)
+```
+
+```{r}
+carprice <- read.csv("CarPrice.csv", header=T, stringsAsFactors=T)
+```
+
+```{r}
+View(carprice)
+```
+
+# Task1
+## Task 1a)
+### Dataset with 35% data. Use class as the class attribute
+
+```{r}
+set.seed(123)
+carprice35 <- createDataPartition(y = carprice$carbody, p = .35, list = FALSE)
+carprice35 <- carprice[carprice35,]
+write.csv(carprice35, file="carprice35.csv", row.names = F)
+```
+
+
+
+
+### Define control method using 3 repeats of 10-fold cross validation
+```{r}
+# setting the validation control - 3 repeats of 10-fold cross validation
+
+ctrl <- trainControl(method = "repeatedcv", repeats = 3, 
+                     number = 12,  verboseIter=F)
+```
+
+
+## RF with diabetes dataset
+
+```{r}
+# running RF on the carprice dataset
+set.seed(123)
+my.rf <- train(carbody ~ ., data = carprice,
+             method = "rf",
+             trControl = ctrl)
+
+# to check accuracy
+print(my.rf$results)
+```
+
+
+## NB with the reduced size dataset
+
+```{r}
+set.seed(123)
+my.rf35 <- train(carbody ~ ., data = carprice35,
+             method = "rf",
+             trControl = ctrl)
+
+# to check accuracy
+print(my.rf35$results)	
+# to check size of tree
+print(my.rf35$finalModel)
+
+#Confusion matrix
+confusionMatrix.train(my.rf35)
+```
+
+
+## kNN with diabetes dataset
+
+```{r}
+set.seed(123)
+my.knn <- train(carbody ~ ., data = carprice,
+             method = "knn",
+		 tuneGrid=expand.grid(.k=1:7),preProcess= c("center","scale"),
+             trControl = ctrl)
+			 
+# to check accuracy
+print(my.knn$results)	
+
+#Confusion matrix
+confusionMatrix(my.knn)
+```
+
+## kNN with the reduced size dataset
+
+```{r}
+set.seed(123)
+my.knn35 <- train(carbody ~ ., data = carprice35,
+             method = "knn", preProcess=c("center","scale"),
+		 tuneGrid=expand.grid(.k=1:7),
+             trControl = ctrl)
+			 
+# to check accuracy
+print(my.knn35$results)	
+
+#Confusion matrix
+confusionMatrix(my.knn35)
+```
+## Comparison of results
+
+```{r}
+# comparing all results (95% confidence interval)
+results <- resamples(list(Randomforest=my.rf, kNNmodel=my.knn, Randomforest35=my.rf35,kNNmodel35=my.knn35))
+scales <- list(x=list(relation="free"), y=list(relation= "free"))
+#dotplot(results, scales=scales, conf.level = 0.80)
+
+# comparing all results (80% confidence interval)
+dotplot(results, scales=scales, conf.level = 0.80)
+```			 
+ 
+### explain the observations in detail based on the results which you were received.
+ 
+
+ #Task2
+ 
+```{r}
+# run the apriori algorithm in the user dataset
+set.seed(123)
+rules = apriori(contact, parameter=list(support=0.2, confidence=0.95));
+```
+## Task 2a)
+```{r}
+inspect(head(sort(rules, by ="confidence"),4))
+```
+ ## Task 2b)
+```{r}
+# run the apriori algorithm in the user dataset
+set.seed(123)
+rules1 = apriori(contact, parameter=list(support=0.1, confidence=0.6));
+```
+## Task 2a)
+```{r}
+inspect(head(sort(rules1, by ="lift"),30))
+```
+
+## 
+```{r}
+# sort rules by lift
+set.seed(123)
+rules.sorted <- sort(rules1, by="lift")
+
+
+# remove redundant rules
+
+redundant <- is.redundant(rules.sorted, measure = "lift")
+rules.pruned <- rules.sorted[!redundant]
+rules.pruned
+```
+
+## Task 2b) 1. is 
+```{r}
+# occupation on the RHS
+irules <- apriori(contact, parameter=list(support=0.1, confidence=0.6),
+appearance = list(rhs=c("tearProductionRate=normal","tearProductionRate=reduced"), default="lhs"))
+inspect(head(sort(irules, by ="lift"),10))
+```
+
+
+```{r}
+data("Groceries")
+summary(Groceries)
+View(Groceries)
+```
+```{r}
+rules <- apriori(Groceries, parameter=list(support=0.001, confidence=0.5))
+```
+```{r}
+inspect(head(sort(rules, by ="lift"),10))
+```
+
+```{r}
+butterWhiteBreadWholeMilk <- apriori(Groceries, 
+parameter=list(support=0.001, confidence=0.5),
+appearance = list(lhs=c("butter", "white bread"), 
+rhs=c("whole milk")),
+			control = list(verbose=F))
+
+```
+```{r}
+inspect(head(sort(butterWhiteBreadWholeMilk, by ="lift"),15))
+```
