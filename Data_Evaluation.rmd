@@ -1,0 +1,270 @@
+---
+title: "Data_Evaluation"
+author: "Dulla"
+date: "2024-04-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Aim
+To introduce evaluation methods for classification.
+Packages/libraries
+You need at least the following packages
+• caret
+• mlbench
+• partykit
+• rattle
+Load the above packages using the library function.
+Experimentation
+The trainControl function enables the setting of different evaluation methods
+for caret’s train model building function. It will include stratification where
+required.
+trainControl takes several arguments including:
+• method: values include
+o "boot": bootstrap
+o "boot632": a second bootstrap method
+o "optimism_boot": a 3rd bootstrap method
+o "boot_all": a method which combines the 3 boostrap methods
+above.
+o "cv" : cross validation
+o "repeatedcv": repeated cross validation
+o "LOOCV": leave one out
+o "LGOCV": leave group out – randomly leaves a group of instances
+out of the training set.
+o "oob": out of bag – [used, for example with algorithms based on
+randomisation]. Will not use this in this lab.
+o "none": fits one model to the entire training set.
+• number: refers to either the number of folds (for k-fold cross validation) or
+number of resampling iterations (for bootstrap and leave group out). The
+default is 10 for “cv” and 25 for other methods.
+
+• repeats: used for cross validation (CV), it indicates the number of sets of
+cross validation to be executed. E.g. if repeats = 3 and number = 10, it
+would be 3 sets of 10-fold cross validations.
+• verboseIter: if set to TRUE, run information is outputted.
+• p: the training percentage for “LGOCV”.
+The trainControl can be set up within the train function using parameter
+trControl. For example
+```{r}
+# defining the evaluation method:4-fold cross validation repeated 3 times.
+ctrl <- trainControl (method = "repeatedcv",
+number = 4,
+repeats = 3,
+verboseIter=TRUE)
+```
+
+
+```{r}
+
+# ensuring reproducibility by setting the seed
+set.seed(123)
+# running C5.0Tree on the iris dataset.
+# Note the use of trControl with the previously defined trainControl.
+c5treemod <- train(Species ~ ., data = iris,
+method = "C5.0Tree",
+tuneLength = 12,
+trControl = ctrl)
+# run values
+c5treemod
+# checking results
+summary(c5treemod$finalModel)
+```
+
+The tuneLength parameter above tells caret to try 12 different default settings of
+the algorithm.
+The seed
+Setting the seed to the same value (the actual value does not matter) just
+before we each of the algorithms we want to try on the same data ensures the
+sampling is identical for all algorithms. It also ensures that the experiments can
+be reproduced, i.e. if the same experiments are run again, the same results are
+obtained.
+Exercises
+1. Run C5.0Tree with the iris dataset as above, i.e. 3 repeats of 4-fold cross
+validation.
+2. Check the confusion matrix. Does it use rows or columns for actual class
+values?
+3. Is the confusion matrix on training or on testing data? Is this the
+confusion matrix we should be using?
+4. Which class distinctions are most difficult according to the confusion
+matrix?
+5. How big is the classification tree? Number of nodes, leaves and levels.
+
+6. The dataset has 4 attributes (excluding the class). State the 2 most
+important attributes for identifying irises.
+7. What are the defining characteristics of iris setosa?
+The metric parameter in train
+Function train has a parameter called metric. This parameter indicates the
+metric used in order to select the best model (the results will give both metrics).
+For classification tasks, the metric can be set to either "Accuracy" or "Kappa".
+The default value is "Accuracy".
+For example, try
+```{r}
+ctrl <- trainControl(method = "repeatedcv",
+number = 4,
+repeats = 3,
+verboseIter=TRUE)
+```
+
+```{r}
+# ensuring reproducibility by setting the seed
+set.seed(123)
+# running C5.0Tree on the iris dataset.
+c5treemod <- train(Species ~ ., data = iris,
+method = "C5.0Tree",
+metric = "Accuracy",
+trControl = ctrl)
+# run values
+c5treemod
+# checking results
+summary(c5treemod$finalModel)
+```
+
+Note: For regression tasks, the metric can be set to either the root mean
+squared error ("RMSE") or to R squared ("Rsquared"). The default is "RMSE".
+You will see this later in the module.
+Exercise
+8. Run the C5.0Tree on the iris dataset (as above) but use Kappa as the
+performance metric.
+Comparing performance on test sets
+ConfusionMatrix.train() can be used to obtain a confusion matrix which
+estimates the results of the evaluation using the resampling procedure.
+norm= "overall " gives % figures over all repetitions
+norm= "none" gives figures over all runs (added)
+norm= "average " gives figures averaged over the number of samples.
+Compare the following 3 confusion matrices:
+
+
+• none – numbers obtained over independent runs added. It should add up
+number of repetitions times dataset size. If using 4-fold cross validation 3
+times with the iris dataset (150 instances), i.e. 450.
+confusionMatrix.train(c5treemod, norm="none")
+• overall – figures are percentages of the results obtained over all the runs.
+If using 4-fold cross validation 3 times with the iris dataset (150
+instances) the numbers in the matrix should add up to 100 [i.e. 100%]
+confusionMatrix.train(c5treemod, norm ="overall")
+• averaged over number of samples. If using 4-fold cross validation 3 times
+with the iris dataset (150 instances) each fold contains ~ 150/4= 37.5.
+The figures for all folds (3 repeats of 4-fold cross validation = 12 folds) so
+numbers in confusion matrix will add up to 37.5.
+confusionMatrix.train(c5treemod, norm="average")
+NOT to be used with leave one out, bootstrap or no repeats. Use print()
+or summary() instead
+Exercise
+9. Compare the confusion matrices you obtained with the
+confusionMatrix.train function to the ones you obtained using the
+summary function on the final model. Do they use the same items in
+columns/rows?
+The print function
+The print function can be used with leave one out as follows:
+First, we define the train control for leave one out.
+```{r}
+ctrl <- trainControl(method = "LOOCV")
+```
+
+Then we obtain the model using the above train control.
+```{r}
+c5weathermod <- train(play ~ ., data = WeatherPlay,
+method = "C5.0Tree",
+trControl = ctrl)
+```
+
+Finally we use print to get the model’s performance.
+```{r}
+print(c5weathermod)
+```
+
+Exercise
+10.Compare the performance of the following algorithms:
+• C5.0Tree
+• C5.0Rules
+• rpart
+• rpart2
+• ctree (an algorithm in library mlbench)
+• ctree2 (also in mlbench)
+
+
+Note: you may wish to set the verboseIter option to FALSE.
+Note2: in the lab on week 2 you learnt how to print trees produced by
+algorithm rpart using function fancyRpartPlot() (you will need library
+rattle). For some trees (not the ones produced by C5.0Tree or
+rpart/rpart2), you can use function plot() to print the “finalModel”. E.g.
+if the model is put in variable myModel
+```{r}
+plot(myModel$finalModel)
+```
+
+In order to compare them, you will need to use an evaluation method
+(e.g. cross validation, bootstrap, leave one out, holdout) for each of the
+datasets you test. For holdout, use method = "LOGCV" with p =
+percentage of instances on training set, so you can set this to 66.67, i.e.
+2/3) Use each of the following datasets:
+a. iris
+b. contact lenses
+c. Glass [In mlbench package. Class is “Type”. To use run data(Glass)]
+d. LetterRecognition [In mlbench package. Class is “lettr”. To use call
+data(LetterRecognition)]
+Note that the comparisons above do NOT take into account statistical
+significance.
+Measuring statistical significance
+We would like to compare several algorithms’ results for statistical significance.
+It is important to set the seed to the same specific value just before we run
+each of the algorithms on the data so the sampling is identical for all algorithms.
+It also ensures that the experiments can be reproduced, i.e. if the same
+experiments are run again, the same results are obtained.
+```{r}
+# load the diabetes dataset
+data(PimaIndiansDiabetes)
+```
+
+```{r}
+# prepare training method.
+ctrl <- trainControl(method="repeatedcv", number=10, repeats=3)
+#use several algorithms: CART, C5.0Rules, C5.0Tree.
+# CART
+# setting the seed makes the experiment reproducible.
+set.seed(1)
+
+mod.cart <- train(diabetes~., data=PimaIndiansDiabetes, method="rpart",
+trControl=ctrl)
+# C5.0 Rules
+set.seed(1)
+mod.c5rules <- train(diabetes~., data=PimaIndiansDiabetes,
+method="C5.0Rules", trControl=ctrl)
+# C5.0 Trees
+set.seed(1)
+mod.c5t <- train(diabetes~., data=PimaIndiansDiabetes, method="C5.0Tree",
+trControl=ctrl)
+Collecting results for comparison: Once the models for all the algorithms
+have been obtained, the results can be collected in a list.
+# collect resamples
+results <- resamples(list(CART=mod.cart, c5Rules= mod.c5rules, c5tree=
+mod.c5t))
+# show accuracy and kappa details
+results
+summary(results)
+```
+
+Note that “CART”, “c5Rules” and “c5tree” are the names chosen for the models.
+These names appear when the results are shown. Other names such as “CART-
+algorithm”, “C5-rules” and “C5-tree” could have been used.
+Comparison of results: Now, a plot can be obtained which shows the models’s
+accuracy as well as the error bars for a given confidence level (e.g. 0.95).
+scales <- list(x=list(relation="free"), y=list(relation= "free"))
+dotplot(results, scales=scales, conf.level = 0.95)
+Other options include plotting boxplots with
+bwplot(results)
+and getting a scatter plot matrix showing accuracies for each of the runs, for
+each algorithm
+splom(results)
+Exercises
+11.Write R code to compare the performance of C5.0Tree, C5.0Rules and
+rpart and ctree with a confidence level of 99%. Are the intervals bigger or
+smaller than the ones you obtained earlier for the first 3 algorithms?
+12.Find the confidence level at which at least 2 of the algorithms above can
+be said to have a different performance in terms of % accuracy. Tip: if the
+intervals overlap, lower the confidence level to obtain smaller intervals
+until at least 2 intervals don’t overlap.

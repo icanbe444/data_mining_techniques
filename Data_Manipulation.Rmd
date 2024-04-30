@@ -1,0 +1,458 @@
+---
+title: "Data frames"
+author: "Ines"
+date: '2022/23'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##  Clearing the environment and library loading
+
+Clearing the environment.
+
+```{r}
+rm(list=ls())
+```
+
+Loading library tidyverse.
+
+```{r}
+library(tidyverse)
+```
+
+## Creating a data frame from scratch
+
+```{r}
+caseID <- c("C1", "C2", "C3", "C4")
+problem <- c("theft", "robbery", "assault", "robbery")
+solved <- c(TRUE, TRUE, FALSE, TRUE)
+courtDays <- c(3,2,1,14)
+courtCases <- 
+	data.frame(caseID, problem, solved, courtDays, stringsAsFactors=T)
+```
+
+Checking the result
+
+```{r}
+
+View(courtCases)
+```
+
+
+```{r}
+courtCases$problem
+```
+
+## Creating a data frame from 2 data frames
+
+We created a data frame courtCases earlier. Here, we create a 2nd one with the same column names (casesID, problem, solved, courtDays). This time we have 3 new instances (records).
+
+```{r}
+caseID <- c("C5", "C6", "C7")
+problem <- c("robbery","theft", "robbery")
+solved <- c(TRUE, FALSE, TRUE)
+courtDays <- c(5,1,2)
+newCourtCases <- 
+	data.frame(caseID, problem, solved, courtDays, stringsAsFactors=T)
+```
+
+
+
+## Adding data frames courtCases and newCourtCases together
+
+
+The courtCases and newCourtCases data frames can be put together by binding rows with rbind()
+
+```{r}
+allCourtCases <- rbind(courtCases, newCourtCases)
+```
+
+You can check that the binding has occurred using View() or the name of the new data frame.
+
+```{r}
+View(allCourtCases)
+```
+
+## Adding columns
+
+assume you want to add the waiting time before the case went to court.
+
+```{r}
+wait <- c(45,53,80,101,49,77,110)
+```
+
+
+To add this to the allCourtCases dataframe
+
+```{r}
+allCourtCases$wait <- wait
+```
+
+You can now add 
+
+
+```{r} 
+allCourtCases$time <- allCourtCases$wait + allCourtCases$courtDays
+```
+
+
+```{r} 
+allCourtCases$threePlus <- allCourtCases$time > 90 
+```
+
+## Creating a data frame from a file
+
+### Loading data file onto a dara frame
+
+The code below reads data into a data frame. 
+
+
+```{r}
+labor <- read.csv("labor.csv", header = FALSE, stringsAsFactors=T)
+```
+
+When you inspect this dataset you will see that there are a number of NA values. This means there is no value for that specific attribute (column) and instance (row).
+
+
+### Loading a data file onto a tibble
+
+```{r}
+laborT <- read_csv("labor.csv" )
+laborT <- laborT  |> mutate(across(where(is.character),as_factor))
+```
+
+
+### Converting a tibble to a data frame
+
+```{r}
+class(laborT)
+laborTtoDF <- as.data.frame(laborT)
+class(laborTtoDF)
+```
+
+### Converting a data frame to a tibble
+
+```{r}
+
+class(labor)
+laborToT <- as_tibble(labor)
+class(laborToT)
+
+```
+
+
+
+## Using R’s pre-installed datasets
+
+Checking the list of datasets included in R
+
+```{r}
+data() 
+```
+
+One existing dataset is BOD. To load the BOD (biochemical oxygen demand)  dataset  use
+
+```{r}
+data(BOD)
+```
+
+To see what this dataset contains 
+
+```{r}
+View(BOD)
+```
+To check its type, i.e. that it is a data.frame
+
+```{r}
+class(BOD)
+```
+
+Another dataset is the co2 dataset. To inspect the first 3 rows of the co2 dataset
+
+```{r}
+head(CO2, n = 3) 
+```
+
+To inspect the last 3 rows of the co2 dataset
+
+```{r}
+tail(CO2, n = 3) 
+```
+
+To check the number of columns of the co2 dataset
+
+```{r}
+ncol(CO2) 
+```
+
+To check the number of rows of the co2 dataset
+
+```{r}
+nrow(CO2) 
+```
+
+To check both rows and columns use
+
+```{r}
+dim(CO2)
+```
+
+## Extracting information from a data frame
+
+To get the column names
+
+```{r}
+names(CO2) 
+```
+
+To get column and row names
+
+```{r}
+attributes(CO2) 
+```
+
+To get a good idea of the characteristics of a dataset use
+
+```{r}
+summary(CO2)
+```
+
+To get all the values for the Treatment column in the CO2 dataset
+
+```{r}
+CO2$Treatment
+```
+
+To get a dataset like CO2 but with only the 4th (“conc”) column
+
+```{r}
+CO2fourth <- CO2[,4]
+```
+
+To get a dataset like CO2 but with only the 3rd and 4th columns
+
+```{r}
+CO2thirdFourth <- CO2[,c(3,4)]
+```
+
+To get a dataset like CO2 but with only rows 10 to 20
+
+```{r}
+CO2Rows10to20 <- CO2[c(10:20),]
+```
+
+Combining both
+
+
+```{r}
+CO2extract <- CO2[c(10:20),c(3,4)]
+```
+
+## Excluding specific rows and columns - building a dataset from specific columns and rows
+
+To get a dataset like CO2 but with no Treatment column (the 3rd one) 
+
+```{r}
+CO2NoTreat <- CO2[,-3]
+```
+
+To get a dataset like CO2 but excluding rows 4 to 9
+
+```{r}
+CO2NoRows4to9 <- CO2[-c(4:9),]
+```
+
+Combining both
+
+```{r}
+CO2NoTreatNoRows4to9 <- CO2[-c(4:9),3]
+```
+
+## Instance (observation) selection
+
+Assuming that we want instances where the Treatment is “chilled”.
+
+```{r}
+CO2chilled <- subset(CO2, Treatment =="chilled")
+```
+
+Column Treatment is useless (all values are the same) so can be deleted.
+
+```{r}
+CO2chilled$Treatment <- NULL
+```
+
+We want to use CO2 data, but only where the treatment is chilled and the uptake is at least 30.
+
+```{r}
+CO2selectedVals <- subset(CO2, Treatment =="chilled" & uptake >=30)
+```
+
+##Column deletion
+
+Column Treatment is useless (all values are the same) so can be deleted.
+
+```{r}
+CO2selectedVals$Treatment <- NULL
+```
+
+## Exercises with data frames
+
+
+### Exercise 1
+
+First  a vector for each of the 5 attribute is created (course, module1, credits1, module2 and credits2), with a value for each of the 4 instances. Then the 5 vectors are put together into a dataframe. 
+
+```{r}
+course <- c("Data Science", "Cyber Security", "IT", "Digital Media")
+module1 <- c("analytics", "ethical hacking", "databases", "3D animation")
+credits1 <- c(15,15,20,30)
+module2 <- c("project", "forensics","Java programming", "perception")
+credits2 <- c(45,15,20,12)
+courses <- data.frame(course, module1, credits1,module2, credits2, stringsAsFactors = T)
+# to check
+View(courses)
+
+```
+
+
+### Exercise 2
+
+The new instance is created
+
+```{r}
+e <- data.frame("Networks", "CISCO CCNA", 25, "Operating systems",40, stringsAsFactors=T)
+# Give same column names as the courses data frame
+names(e) <- names(courses)
+# add the rows in the new data frame to the courses data frame 
+courses <- rbind(courses, e)
+# to check
+View(courses)
+```
+
+
+### Exercise 3
+
+```{r}
+courses$total <- courses$credits1 + courses$credits2
+# to check
+View(courses)
+```
+
+### Exercise 4
+
+```{r}
+courses$pgcert <- courses$total >=60
+# to check
+View(courses)
+```
+
+### Exercise 5
+
+```{r}
+twentyPlus <- subset(courses, courses$credits1 >=20 | courses$credits2 >=20)
+# to check
+View(twentyPlus)
+```
+
+### Exercise 6
+
+```{r}
+noDBs <- subset(courses, courses$module1 != "databases" & courses$module2 != "databases")
+# to check
+View(noDBs)
+```
+
+
+### Exercise 7
+
+```{r}
+lenses <- read.csv("contactLenses.csv", stringsAsFactors = T)
+```
+
+### Exercise 8
+
+```{r}
+head(lenses, 4)
+
+```
+
+### Exercise 9
+
+```{r}
+tail(lenses,3)
+
+```
+
+### Exercise 10
+
+```{r}
+# to view a summary (data types can be inferred from this)
+summary(lenses)
+
+## to check the structure/type
+str(lenses)
+
+```
+It can be seen that there are no missing values.
+
+### Exercise 11
+
+```{r}
+# check value before change -value is myope
+lenses[3,]
+# change value to pre-presbyopic
+lenses$age[3] <- "pre-presbyopic"
+# alternative ensuring string is a factor
+# lenses$age[3] <- as.factor("pre-presbyopic")
+# checking result
+lenses[3,]
+
+```
+
+### Exercise 12
+
+```{r}
+lenses$tearProductionRate <- NULL
+```
+
+### Exercise 13
+
+There are 2 alternatives below. The second one is commented out.You will learn a 3rd one in the next lab.
+
+```{r}
+# Option 1
+colnames(lenses)[colnames(lenses)=="contactLenses"] <- "recommendation"
+
+# Option 2 
+# Add new column
+#lenses$recommendation <-  lenses$contactLenses
+# Remove old column
+#lenses$contactLenses <- NULL
+
+# To check it works
+names(lenses)
+```
+
+
+### Exercise 14
+
+This solution uses a ``provisional" column  called astigTrue to hold intermediate results.
+
+```{r}
+lenses$astigTrue[lenses$astigmatism =="yes"] <- 1
+lenses$astigTrue[lenses$astigmatism =="no"] <- 0
+#copy  provisional column
+lenses$astigmatism <- lenses$astigTrue
+#delete provisional column
+lenses$astigTrue <- NULL
+# To check it works
+head(lenses,6)
+```
+
+### Exercise 15
+
+The code is identical to the code you have used earlier with data frames, but using tibbles instead.

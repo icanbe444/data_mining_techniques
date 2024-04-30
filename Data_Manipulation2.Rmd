@@ -1,0 +1,157 @@
+---
+title: "Data_Manipulation2"
+author: "Dulla"
+date: "2024-04-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Lab Aim
+To learn about Data Manipulation Functions present in dplyr package.
+
+Before you start
+Load the following packages (download them if needed):
+dplyr – provides a consistent set of functions that help you solve the most common data manipulation challenges. Like, 
+1.	filter(): Produces a subset of a Data Frame.
+2.	distinct(): Removes duplicate rows in a Data Frame
+3.	arrange():Reorder the rows of a Data Frame
+4.	select(): Produces data in required columns of a Data Frame
+5.	rename():Renames the variable names
+6.	mutate():Creates new variables without dropping old ones.
+7.	transmute():Creates new variables by dropping the old.
+8.	summarize():Gives summarized data like Average, Sum, etc.
+In this lab you will be using our own created dataset. Lets start,,
+filter() method: The filter() function is used to produce the subset of the data that satisfies the condition specified in the filter() method. In the condition, we can use conditional operators, logical operators, NA values, range operators etc. to filter out data. Syntax of filter() function is given below-
+Syntax: filter(dataframeName, condition)
+
+Exercise 1: Let us write a code using filter() function to fetch the data of players who scored more than 100 runs from the “stats” data frame.
+
+```{r}
+# import dplyr package
+library(dplyr)
+```
+
+ 
+```{r}
+# create a data frame 
+stats <- data.frame(player=c('A', 'B', 'C', 'D'),
+                runs=c(100, 200, 408, 19),
+                wickets=c(17, 20, NA, 5))
+ 
+```
+
+```{r}
+# fetch players who scored more
+# than 100 runs
+filter(stats, runs>100)
+```
+
+
+distinct() method: The distinct() method removes duplicate rows from data frame or based on the specified columns. The syntax of distinct() method is given below-
+Syntax: distinct(dataframeName, col1, col2,.., .keep_all=TRUE)
+Example: Let us write a code using distinct() method to remove the duplicate rows from the data frame and also remove duplicates based on a specified column.
+```{r}
+# create a data frame 
+stats <- data.frame(player=c('A', 'B', 'C', 'D', 'A', 'A'),
+                runs=c(100, 200, 408, 19, 56, 100),
+                wickets=c(17, 20, NA, 5, 2, 17))
+```
+
+```{r}
+ # removes duplicate rows
+distinct(stats)
+ #remove duplicates based on a column
+distinct(stats, player, .keep_all = TRUE)
+```
+
+
+arrange() method: In R, the arrange() method is used to order the rows based on a specified column. The syntax of arrange() method is specified below-
+Syntax: arrange(dataframeName, columnName)
+Example: Let us write a code to ordered the data based on the runs from low to high using arrange() function.
+```{r}
+# create a data frame 
+stats <- data.frame(player=c('A', 'B', 'C', 'D'),
+                runs=c(100, 200, 408, 19),
+                wickets=c(17, 20, NA, 5))
+ # ordered data based on runs
+arrange(stats, runs)
+
+```
+
+select() method: The select() method is used to extract the required columns as a table by specifying the required column names in select() method. The syntax of select() method is mentioned below-
+Syntax: select(dataframeName, col1,col2,…)
+Example: Let us write a code  to fetche the player, wickets column data only using select() method.
+```{r}
+# create a data frame 
+stats <- data.frame(player=c('A', 'B', 'C', 'D'),
+                runs=c(100, 200, 408, 19),
+               wickets=c(17, 20, NA, 5))
+ # fetch required column data
+select(stats, player,wickets)
+```
+
+
+rename() method: The rename() function is used to change the column names. This can be done by the below syntax-
+Syntax: rename(dataframeName, newName=oldName)
+Example: Let us write a code to change the column name “runs” to “runs_scored” in stats data frame.
+```{r}
+# create a data frame 
+stats <- data.frame(player=c('A', 'B', 'C', 'D'),
+                runs=c(100, 200, 408, 19),
+                wickets=c(17, 20, NA, 5))
+```
+
+```{r}
+ # renaming the column
+rename(stats, runs_scored=runs)
+```
+
+
+mutate() & transmute() methods: These methods are used to create new variables. The mutate() function creates new variables without dropping the old ones but transmute() function drops the old variables and creates new variables. The syntax of both methods is mentioned below-
+Syntax: mutate(dataframeName, newVariable=formula)
+transmute(dataframeName, newVariable=formula)
+Example: Let us write code to create a new column avg using mutate() and transmute() methods.
+```{r}
+# create a data frame 
+stats <- data.frame(player=c('A', 'B', 'C', 'D'),
+                runs=c(100, 200, 408, 19),
+                wickets=c(17, 20, 7, 5))
+```
+
+```{r}
+ # add new column avg
+mutate(stats, avg=runs/4)
+ # drop all and create a new column
+transmute(stats, avg=runs/4)
+```
+
+Here mutate() functions adds a new column for the existing data frame without dropping the old ones where as transmute() function created a new variable but dropped all the old columns.
+
+summarize() method: Using the summarize method we can summarize the data in the data frame by using aggregate functions like sum(), mean(), etc. The syntax of summarize() method is specified below-
+Syntax: summarize(dataframeName, aggregate_function(columnName))
+Example: Let us write a code to summarize the data present in the runs column using summarize() method.
+```{r}
+# create a data frame 
+stats <- data.frame(player=c('A', 'B', 'C', 'D'),
+                runs=c(100, 200, 408, 19),
+                wickets=c(17, 20, 7, 5))
+ # summarize method
+summarize(stats, sum(runs), mean(runs))
+
+```
+
+
+
+
+
+
+Exercise 2: Using iris dataset
+1.	Write a R code to summarize the data present in the runs column using summarize() method.  
+2.	Write a R code to select Sepal.Length, Sepal.Width, Petal.Length columns using select() method and also write argument function to print first four rows.  
+3.	Write a R code to select first three rows with species as setosa using filter() function
+4.	Write a R code to create a column with name “Decision” and hold the data as per the condition is TRUE, and the condition is: Sepal.Width > 0.5 * Sepal.Length using mutate() function
+

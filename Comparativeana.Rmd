@@ -1,0 +1,123 @@
+---
+title: "LabNaiveBayes"
+author: "Dulla"
+date: "2024-04-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+rm(list=ls())
+```
+
+```{r}
+library(tidyverse)
+library(caret)
+library(arules)
+library(arulesViz)
+```
+
+```{r}
+diabetes <- read.csv("diabetes.csv", header=T, stringsAsFactors=T)
+View(diabetes)
+```
+
+### Dataset with 30% data. Use class as the class attribute
+```{r}
+set.seed(123)
+diabetes30 <- createDataPartition(y = diabetes$class, p = 0.3, list = FALSE)
+diabetes30 <- diabetes[diabetes30,]
+write.csv(diabetes30, file="diabetes30.csv", row.names = F)
+```
+
+### Define control method using 4 repeats of 10-fold cross validation
+```{r}
+ctrl <- trainControl(method = "repeatedcv",repeats = 4, 
+                     number = 12,  verboseIter=F)
+```
+
+```{r}
+## Naive Bayes with diabetes dataset
+set.seed(123)
+my.nb <- train(class ~ ., data = diabetes,
+             method = "nb",
+            # tuneLength = 12,
+             trControl = ctrl)
+
+```
+
+### to check accuracy
+```{r}
+print(my.nb$results)
+```
+
+```{r}
+### Confusion matrix
+confusionMatrix.train(my.nb)
+```
+
+```{r}
+view(diabetes30)
+```
+
+
+```{r}
+## NB with the reduced size dataset
+set.seed(123)
+my.nb30 <- train(class ~ ., data = diabetes30,
+             method = "nb",
+             trControl = ctrl)
+### to check accuracy
+print(my.nb30$results)	
+###Confusion matrix
+confusionMatrix.train(my.nb30)
+```
+```{r}
+## kNN with diabetes dataset
+set.seed(123)
+my.knn <- train(class ~ ., data = diabetes,
+             method = "knn",
+		 tuneGrid=expand.grid(.k=1:7),preProcess= c("center","scale"),
+             trControl = ctrl)
+
+```
+
+```{r}
+# to check accuracy
+print(my.knn$results)	
+#Confusion matrix
+confusionMatrix(my.knn)
+
+```
+```{r}
+## kNN with the reduced size dataset
+set.seed(123)
+my.knn30 <- train(class ~ ., data = diabetes30,
+             method = "knn", preProcess=c("center","scale"),
+		 tuneGrid=expand.grid(.k=1:7),
+             trControl = ctrl)
+
+```
+
+```{r}
+### to check accuracy
+print(my.knn30$results)	
+### Confusion matrix
+confusionMatrix(my.knn30)
+
+```
+
+```{r}
+## Comparison of resultsresults <- resamples(list(Naive=my.nb, kNNmodel=my.knn, Naive30=my.nb30,kNNmodel30=my.knn30))
+scales <- list(x=list(relation="free"), y=list(relation= "free"))
+# comparing all results (95% confidence interval)
+dotplot(results, scales=scales, conf.level = 0.95)
+# comparing all results (90% confidence interval)
+dotplot(results, scales=scales, conf.level = 0.90)
+
+```
+

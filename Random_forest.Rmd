@@ -1,0 +1,94 @@
+---
+title: "Random_Forest"
+author: "Dulla"
+date: "2024-04-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Lab
+Some of the ideas for this lab appear at:
+Ref: http://machinelearningmastery.com/machine-learning-ensembles-with-r/ [ accessed
+12/11/2022]
+Aim
+To learn about ensemble prediction: bagging.
+Before you start
+Load the following packages (download them if needed):
+• mlbench
+• caret
+• caretEnsemble
+• gbm
+Bagging
+Bootstrap Aggregating, also known as bagging, is a machine learning ensemble
+meta-algorithm designed to improve the stability and accuracy of machine
+learning algorithms used in statistical classification and regression. It decreases
+the variance and helps to avoid overfitting. It is usually applied to decision tree
+methods.
+In bagging, a random sample of data in a training set is selected with
+replacement—meaning that the individual data points can be chosen more than
+once.
+Random forest options
+Random forest has various options which can be tuned. One of them is to set the
+number for mtry, which contains the number of attributes to be considered at each
+split. In the lecture, we saw that it is recommended to consider a number which
+is the square root of the number of columns. You can do this as follows:
+```{r}
+# Loading package
+library(caTools)
+library(randomForest)
+```
+
+```{r}
+# Splitting data in train and test data
+
+## Read dataset
+data(iris)
+## Store data in a variable called dataset and view the dataset
+dataset <- iris
+# For viewing dataset
+View(dataset)
+# split the data for effective performance of model
+validation_index <- createDataPartition(dataset$Species, p=0.80, list=FALSE)
+# Validation
+Validate <- dataset[-validation_index,]
+# training
+traindata <- dataset[validation_index,]
+## For plotting
+x <- traindata[,1:4]
+y <- traindata[,5]
+par(mfrow=c(1,4))
+for(i in 1:4) {
+boxplot(x[,i], main=names(iris)[i])
+}
+## To visualize the plot
+plot(y)
+```
+
+## Apply Training Method
+```{r}
+control <- trainControl(method="repeatedcv", number=10, repeats = 3)
+metric <-"Accuracy"
+```
+
+```{r}
+
+## apply Random Forest method
+set.seed(7)
+my.rf <- train(Species~., data=traindata, method="rf", metric=metric,
+trControl=control)
+summary(my.rf)
+## for validating the important variable for random forest
+importance <- varImp(my.rf)
+## for plotting the importance of variable
+plot(importance)
+## Prediction using validation data
+predictions <- predict(my.rf, Validate)
+predictions
+## Generate confusion matrix for validation dataset
+confusionMatrix(predictions, Validate$Species)
+```
+
